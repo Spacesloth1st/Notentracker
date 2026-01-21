@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Schulnoten-Dashboard – Bayerisches Gymnasium</title>
+  <title>Schulnoten-Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
@@ -78,7 +78,7 @@
 <body>
   <header>
     <h1>📘 Schulnoten-Dashboard</h1>
-    <p>Bayerisches Gymnasium – Noten verwalten & analysieren</p>
+    <p>Noten verwalten & analysieren</p>
   </header>
 
   <main>
@@ -148,6 +148,8 @@
 
   <script>
     const form = document.getElementById('gradeForm');
+	  document.getElementById('date').value = new Date().toISOString().split('T')[0];
+
     const storageKey = 'grades';
     let grades = JSON.parse(localStorage.getItem(storageKey) || '[]');
 
@@ -278,4 +280,5 @@ function deleteGrade(index) {
   </script>
 </body>
 </html>
+
 
