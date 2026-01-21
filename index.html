@@ -148,8 +148,8 @@
 
   <script>
     const form = document.getElementById('gradeForm');
-	  document.getElementById('date').value = new Date().toISOString().split('T')[0];
-
+		document.getElementById('date').value = new Date().toISOString().split('T')[0];
+		document.getElementById('year').value = getCurrentSchoolYear();
     const storageKey = 'grades';
     let grades = JSON.parse(localStorage.getItem(storageKey) || '[]');
 
@@ -157,6 +157,20 @@
     const lineCtx = document.getElementById('lineChart');
 
     let barChart, lineChart;
+
+	function getCurrentSchoolYear() {
+  	const now = new Date();
+  	const year = now.getFullYear();
+  	const month = now.getMonth() + 1; // 1–12
+
+ 	 if (month >= 9) {
+ 	   return `${year}/${String(year + 1).slice(-2)}`;
+ 	 } else {
+ 	   return `${year - 1}/${String(year).slice(-2)}`;
+	  }
+	}
+
+
 
     function saveGrades() {
       localStorage.setItem(storageKey, JSON.stringify(grades));
@@ -280,5 +294,6 @@ function deleteGrade(index) {
   </script>
 </body>
 </html>
+
 
 
