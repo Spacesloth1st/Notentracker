@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Schulnoten-Dashboard – Bayerisches Gymnasium</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --primary: #FF0000;
+      --bg: #242424;
+      --card: #242424;
+      --text: #ffffff;
+      --muted: #64748b;
+    }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    header {
+      background: var(--primary);
+      color: white;
+      padding: 1rem;
+      text-align: center;
+    }
+    main {
+      max-width: 1100px;
+      margin: auto;
+      padding: 1rem;
+      display: grid;
+      gap: 1rem;
+    }
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 1rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    h2 { margin-top: 0; }
+    form {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.75rem;
+    }
+    input, select, button {
+      padding: 0.5rem;
+      border-radius: 8px;
+      border: 1px solid #cbd5f5;
+      font-size: 0.9rem;
+    }
+    button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover { opacity: 0.9; }
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat strong {
+      font-size: 1.5rem;
+      display: block;
+    }
+    canvas { max-width: 100%; }
+    @media (max-width: 600px) {
+      header h1 { font-size: 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>📘 Schulnoten-Dashboard</h1>
+    <p>Bayerisches Gymnasium – Noten verwalten & analysieren</p>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>Note eintragen</h2>
+      <form id="gradeForm">
+        <select id="subject" required>
+          <option value="">Fach</option>
+          <option>Deutsch</option>
+          <option>Mathematik</option>
+          <option>Englisch</option>
+          <option>Latein</option>
+          <option>Politik und Gesellschaft</option>
+          <option>Physik</option>
+          <option>Chemie</option>
+          <option>P-Seminar</option>
+          <option>Geschichte</option>
+          <option>Geographie</option>
+          <option>Wirtschaft und Recht</option>
+	  <option>Religion</option>
+	  <option>Sport</option>
+        </select>
+        <select id="type" required>
+          <option value="">Leistungsart</option>
+          <option>Schulaufgabe</option>
+          <option>Kurzarbeit</option>
+          <option>Ex</option>
+          <option>Mündliche Note</option>
+        </select>
+        <input type="number" id="grade" min="1" max="6" step="1" placeholder="Note (1–6)" required />
+        <input type="date" id="date" required />
+        <input type="text" id="year" placeholder="Schuljahr (z. B. 2025/26)" required />
+        <select id="term" required>
+          <option value="">Halbjahr</option>
+          <option>1. Halbjahr</option>
+          <option>2. Halbjahr</option>
+        </select>
+        <button type="submit">Speichern</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Dashboard</h2>
+      <div class="dashboard">
+        <div class="stat"><span>Gesamtdurchschnitt</span><strong id="avgAll">–</strong></div>
+        <div class="stat"><span>Bestes Fach</span><strong id="bestSubject">–</strong></div>
+        <div class="stat"><span>Schwächstes Fach</span><strong id="worstSubject">–</strong></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Fächerdurchschnitt</h2>
+      <canvas id="barChart"></canvas>
+    </section>
+
+    <section class="card">
+      <h2>Notenverlauf (alle Fächer)</h2>
+      <canvas id="lineChart"></canvas>
+    </section>
+
+    <section class="card">
+      <h2>Meine Noten</h2>
+      <ul id="gradeList" style="list-style:none; padding:0;"></ul>
+    </section>
+
+  </main>
+
+  <script>
+    const form = document.getElementById('gradeForm');
+    const storageKey = 'grades';
+    let grades = JSON.parse(localStorage.getItem(storageKey) || '[]');
+
+    const barCtx = document.getElementById('barChart');
+    const lineCtx = document.getElementById('lineChart');
+
+    let barChart, lineChart;
+
+    function saveGrades() {
+      localStorage.setItem(storageKey, JSON.stringify(grades));
+    }
+
+    function average(arr) {
+      return arr.reduce((a,b)=>a+b,0) / arr.length;
+    }
+
+    function updateDashboard() {
+      if (grades.length === 0) return;
+
+      const bySubject = {};
+      grades.forEach(g => {
+        bySubject[g.subject] = bySubject[g.subject] || [];
+        bySubject[g.subject].push(g.grade);
+      });
+
+      const subjects = Object.keys(bySubject);
+      const averages = subjects.map(s => average(bySubject[s]));
+
+      const overallAvg = average(averages).toFixed(2);
+      document.getElementById('avgAll').textContent = overallAvg;
+
+      let bestIdx = averages.indexOf(Math.min(...averages));
+      let worstIdx = averages.indexOf(Math.max(...averages));
+
+      document.getElementById('bestSubject').textContent = subjects[bestIdx];
+      document.getElementById('worstSubject').textContent = subjects[worstIdx];
+
+      // Bar chart
+      if (barChart) barChart.destroy();
+      barChart = new Chart(barCtx, {
+        type: 'bar',
+        data: {
+          labels: subjects,
+          datasets: [{
+            label: 'Durchschnittsnote',
+            data: averages,
+          }]
+        },
+        options: {
+          scales: { y: { reverse: true, min: 1, max: 6 } }
+        }
+      });
+
+      // Line chart
+      const sorted = [...grades].sort((a,b)=> new Date(a.date)-new Date(b.date));
+      if (lineChart) lineChart.destroy();
+      lineChart = new Chart(lineCtx, {
+        type: 'line',
+        data: {
+          labels: sorted.map(g => g.date),
+          datasets: [{
+            label: 'Notenverlauf',
+            data: sorted.map(g => g.grade),
+            tension: 0.3
+          }]
+        },
+        options: {
+          scales: { y: { reverse: true, min: 1, max: 6 } }
+        }
+      });
+    }
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const entry = {
+        subject: subject.value,
+        type: type.value,
+        grade: Number(grade.value),
+        date: date.value,
+        year: year.value,
+        term: term.value
+      };
+      grades.push(entry);
+      saveGrades();
+      form.reset();
+      updateDashboard();
+      renderGradeList();	
+    });
+const gradeList = document.getElementById('gradeList');
+
+function renderGradeList() {
+  gradeList.innerHTML = '';
+
+  grades.forEach((g, index) => {
+    const li = document.createElement('li');
+    li.style.display = 'flex';
+    li.style.justifyContent = 'space-between';
+    li.style.alignItems = 'center';
+    li.style.marginBottom = '0.5rem';
+
+    li.innerHTML = `
+      <span>
+        <strong>${g.subject}</strong> – Note ${g.grade}
+        (${g.type}, ${g.date})
+      </span>
+      <button style="background:#ef4444;" onclick="deleteGrade(${index})">
+        Löschen
+      </button>
+    `;
+
+    gradeList.appendChild(li);
+  });
+}
+
+function deleteGrade(index) {
+  if (!confirm('Willst du diese Note wirklich löschen?')) return;
+
+  grades.splice(index, 1);
+  saveGrades();
+  updateDashboard();
+  renderGradeList();
+}
+
+    updateDashboard();
+  </script>
+</body>
+</html>
