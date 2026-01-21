@@ -138,6 +138,12 @@
       <h2>Notenverlauf (alle Fächer)</h2>
       <canvas id="lineChart"></canvas>
     </section>
+
+    <section class="card">
+      <h2>Meine Noten</h2>
+      <ul id="gradeList" style="list-style:none; padding:0;"></ul>
+    </section>
+
   </main>
 
   <script>
@@ -228,7 +234,42 @@
       saveGrades();
       form.reset();
       updateDashboard();
+      renderGradeList();	
     });
+const gradeList = document.getElementById('gradeList');
+
+function renderGradeList() {
+  gradeList.innerHTML = '';
+
+  grades.forEach((g, index) => {
+    const li = document.createElement('li');
+    li.style.display = 'flex';
+    li.style.justifyContent = 'space-between';
+    li.style.alignItems = 'center';
+    li.style.marginBottom = '0.5rem';
+
+    li.innerHTML = `
+      <span>
+        <strong>${g.subject}</strong> – Note ${g.grade}
+        (${g.type}, ${g.date})
+      </span>
+      <button style="background:#ef4444;" onclick="deleteGrade(${index})">
+        Löschen
+      </button>
+    `;
+
+    gradeList.appendChild(li);
+  });
+}
+
+function deleteGrade(index) {
+  if (!confirm('Willst du diese Note wirklich löschen?')) return;
+
+  grades.splice(index, 1);
+  saveGrades();
+  updateDashboard();
+  renderGradeList();
+}
 
     updateDashboard();
   </script>
