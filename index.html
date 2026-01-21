@@ -222,14 +222,17 @@
 
     form.addEventListener('submit', e => {
       e.preventDefault();
-      const entry = {
-        subject: subject.value,
-        type: type.value,
-        grade: Number(grade.value),
-        date: date.value,
-        year: year.value,
-        term: term.value
-      };
+      const today = new Date().toISOString().split('T')[0];
+
+    const entry = {
+    subject: subject.value,
+    type: type.value,
+    grade: Number(grade.value),
+    date: date.value || today,
+    year: year.value,
+    term: term.value
+   };
+
       grades.push(entry);
       saveGrades();
       form.reset();
